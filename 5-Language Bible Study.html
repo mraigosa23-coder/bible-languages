@@ -1,0 +1,1643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>5-Language Bible Study</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts: Inter (UI), Frank Ruhl Libre (Hebrew + Nikud), Gentium Plus (Polytonic Greek), Noto Sans SC (Chinese) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;500;700&family=Gentium+Plus:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            paper: '#f8f7f4',
+            scholar: {
+              DEFAULT: '#3b4b80',
+              dark: '#2e3b66',
+              light: '#eef1f8',
+              border: '#d6dced',
+            },
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+            hebrew: ['"Frank Ruhl Libre"', '"SBL Hebrew"', '"Times New Roman"', 'serif'],
+            greek: ['"Gentium Plus"', 'Georgia', '"Times New Roman"', 'serif'],
+            chinese: ['"Noto Sans SC"', '"PingFang SC"', '"Microsoft YaHei"', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    /* Hide scrollbar cleanly on horizontal tab navigation */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    /* Gentle pulse ring when Web Speech API is actively reading */
+    @keyframes speakPulse {
+      0%, 100% {
+        box-shadow: 0 0 0 0 rgba(59, 75, 128, 0.35);
+      }
+      50% {
+        box-shadow: 0 0 0 6px rgba(59, 75, 128, 0);
+      }
+    }
+    .speaking-pulse {
+      animation: speakPulse 1.4s infinite;
+    }
+  </style>
+</head>
+<body class="bg-[#f8f7f4] text-slate-800 font-sans antialiased min-h-screen selection:bg-scholar-light selection:text-scholar-dark">
+
+  <!-- Main App Shell -->
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 py-5 sm:py-9">
+
+    <!-- Top Header & Verse Selector Bar -->
+    <header class="bg-white border border-stone-200/90 rounded-2xl p-4 sm:p-5 shadow-sm mb-5">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <!-- Brand Title -->
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-[#3b4b80] text-white shadow-sm shrink-0">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"></path>
+              </svg>
+            </span>
+            <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
+              5-Language Bible Study
+            </h1>
+          </div>
+          <p class="text-xs sm:text-sm text-slate-500 mt-1">
+            Hebrew &middot; Greek LXX &middot; Spanish &middot; Chinese &middot; Indonesian
+          </p>
+        </div>
+
+        <!-- Daily Progress Badge for Current Verse -->
+        <div class="flex items-center gap-2 bg-[#f8f7f4] border border-stone-200/80 rounded-xl px-3 py-2 self-start sm:self-auto">
+          <span class="text-xs font-medium text-slate-500">Verse Progress</span>
+          <span id="progress-badge" class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-scholar-light text-[#3b4b80]">
+            0 / 5 done
+          </span>
+        </div>
+      </div>
+
+      <!-- Verse Switcher Controls -->
+      <div class="mt-4 pt-4 border-t border-stone-100 flex items-center gap-2 sm:gap-3">
+        <button
+          type="button"
+          id="prev-verse-btn"
+          class="inline-flex items-center justify-center px-3 sm:px-3.5 py-2.5 rounded-xl border border-stone-200 bg-white text-slate-700 hover:border-[#3b4b80] hover:text-[#3b4b80] disabled:opacity-40 disabled:pointer-events-none text-sm font-semibold transition cursor-pointer shrink-0"
+          aria-label="Previous verse"
+          title="Previous verse"
+        >
+          &larr;<span class="hidden sm:inline ml-1.5">Prev</span>
+        </button>
+
+        <div class="relative flex-1 min-w-0">
+          <label for="verse-select" class="sr-only">Select Verse</label>
+          <select
+            id="verse-select"
+            class="w-full appearance-none bg-[#f8f7f4] hover:bg-stone-100/80 border border-stone-200 focus:border-[#3b4b80] focus:ring-2 focus:ring-[#3b4b80]/20 rounded-xl pl-4 pr-10 py-2.5 text-sm sm:text-base font-semibold text-slate-900 transition cursor-pointer focus:outline-none truncate"
+          ></select>
+          <svg class="w-4 h-4 text-slate-500 pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+
+        <button
+          type="button"
+          id="next-verse-btn"
+          class="inline-flex items-center justify-center px-3 sm:px-3.5 py-2.5 rounded-xl border border-stone-200 bg-white text-slate-700 hover:border-[#3b4b80] hover:text-[#3b4b80] disabled:opacity-40 disabled:pointer-events-none text-sm font-semibold transition cursor-pointer shrink-0"
+          aria-label="Next verse"
+          title="Next verse"
+        >
+          <span class="hidden sm:inline mr-1.5">Next</span>&rarr;
+        </button>
+      </div>
+    </header>
+
+    <!-- 5 Language Tabs -->
+    <nav aria-label="Language Tabs" class="mb-5">
+      <div id="tab-bar" role="tablist" class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+        <!-- Tabs rendered dynamically -->
+      </div>
+    </nav>
+
+    <!-- Active Study Card Content -->
+    <main id="study-panel" class="space-y-5">
+      <!-- Rendered dynamically -->
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-10 pt-5 border-t border-stone-200/80 text-center text-xs text-slate-400 space-y-1">
+      <p>Progress is saved automatically in your browser. Built-in speech uses the Web Speech API, with Google Translate links as a fallback.</p>
+    </footer>
+  </div>
+
+  <!-- Toast Container (replaces alert/confirm) -->
+  <div
+    id="toast-container"
+    aria-live="polite"
+    class="fixed bottom-5 right-5 z-50 pointer-events-none flex flex-col gap-2 max-w-xs w-full px-4 sm:px-0"
+  ></div>
+
+  <script>
+    /* =========================================================================
+       1. LANGUAGE METADATA & APPLICATION CONFIGURATION
+       ========================================================================= */
+    const LANG_CONFIG = [
+      {
+        key: 'hebrew',
+        tabLabel: 'Hebrew',
+        fullTitle: 'Biblical Hebrew',
+        subtitle: 'Masoretic Text (RTL)',
+        timeLabel: '2.5m',
+        durationSec: 150,
+        dir: 'rtl',
+        hasAudio: false,
+      },
+      {
+        key: 'greek',
+        tabLabel: 'Greek LXX',
+        fullTitle: 'Biblical Greek — LXX',
+        subtitle: 'Septuagint (Polytonic)',
+        timeLabel: '2.5m',
+        durationSec: 150,
+        dir: 'ltr',
+        hasAudio: false,
+      },
+      {
+        key: 'spanish',
+        tabLabel: 'Spanish',
+        fullTitle: 'Spanish',
+        subtitle: 'Modern Translation · Audio Enabled (es-MX)',
+        timeLabel: '1–2m',
+        durationSec: 120,
+        dir: 'ltr',
+        hasAudio: true,
+        speechLang: 'es-MX',
+        speechPrefix: 'es',
+        gtLang: 'es',
+      },
+      {
+        key: 'chinese',
+        tabLabel: 'Chinese',
+        fullTitle: 'Chinese (Mandarin)',
+        subtitle: 'Character-Aligned Pinyin · Audio Enabled (zh-CN)',
+        timeLabel: '2–3m',
+        durationSec: 180,
+        dir: 'ltr',
+        hasAudio: true,
+        speechLang: 'zh-CN',
+        speechPrefix: 'zh',
+        gtLang: 'zh-CN',
+      },
+      {
+        key: 'indonesian',
+        tabLabel: 'Indonesian',
+        fullTitle: 'Indonesian',
+        subtitle: 'Root-Word Breakdown · Audio Enabled (id-ID)',
+        timeLabel: '2–3m',
+        durationSec: 180,
+        dir: 'ltr',
+        hasAudio: true,
+        speechLang: 'id-ID',
+        speechPrefix: 'id',
+        gtLang: 'id',
+      },
+    ];
+
+    /* =========================================================================
+       2. RUNTIME STATE
+       ========================================================================= */
+    const state = {
+      verseIndex: 0,
+      activeLangKey: 'hebrew',
+      speechRate: 1.0, // 1.0 (Normal) or 0.7 (Slow)
+      speakingKey: null,
+      voices: [],
+      voicesLoaded: false,
+      timers: LANG_CONFIG.reduce((acc, cfg) => {
+        acc[cfg.key] = {
+          remaining: cfg.durationSec,
+          running: false,
+          intervalId: null,
+        };
+        return acc;
+      }, {}),
+    };
+
+    /* =========================================================================
+       3. LOCAL STORAGE HELPERS (PER-VERSE + PER-LANGUAGE COMPLETION)
+       ========================================================================= */
+    function getDoneStorageKey(verseId, langKey) {
+      // Converts "gen-1-2" + "hebrew" -> "done_gen_1_2_hebrew"
+      const normalized = String(verseId).replace(/[^a-zA-Z0-9]+/g, '_');
+      return `done_${normalized}_${langKey}`;
+    }
+
+    function isLangDone(verseId, langKey) {
+      try {
+        return localStorage.getItem(getDoneStorageKey(verseId, langKey)) === '1';
+      } catch (err) {
+        return false;
+      }
+    }
+
+    function setLangDone(verseId, langKey, done) {
+      try {
+        const key = getDoneStorageKey(verseId, langKey);
+        if (done) {
+          localStorage.setItem(key, '1');
+        } else {
+          localStorage.removeItem(key);
+        }
+      } catch (err) {
+        console.warn('localStorage unavailable:', err);
+      }
+    }
+
+    function countVerseDone(verseId) {
+      return LANG_CONFIG.reduce((count, cfg) => count + (isLangDone(verseId, cfg.key) ? 1 : 0), 0);
+    }
+
+    function saveLastSelection() {
+      try {
+        const verse = getActiveVerse();
+        if (verse) {
+          localStorage.setItem('study_last_verse_id', verse.id);
+        }
+        localStorage.setItem('study_last_lang_key', state.activeLangKey);
+      } catch (err) {
+        // Ignore storage errors in private browsing modes
+      }
+    }
+
+    function restoreLastSelection() {
+      try {
+        const savedVerseId = localStorage.getItem('study_last_verse_id');
+        if (savedVerseId) {
+          const idx = VERSES.findIndex((v) => v.id === savedVerseId);
+          if (idx !== -1) state.verseIndex = idx;
+        }
+        const savedLang = localStorage.getItem('study_last_lang_key');
+        if (savedLang && LANG_CONFIG.some((c) => c.key === savedLang)) {
+          state.activeLangKey = savedLang;
+        }
+      } catch (err) {
+        // Ignore storage errors
+      }
+    }
+
+    /* =========================================================================
+       4. WEB SPEECH API (TTS) ENGINE
+       ========================================================================= */
+    const synthSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
+
+    function loadVoices() {
+      if (!synthSupported) return;
+      try {
+        const list = window.speechSynthesis.getVoices();
+        if (list && list.length > 0) {
+          state.voices = list;
+          state.voicesLoaded = true;
+          updateVoiceNotice();
+        }
+      } catch (err) {
+        console.warn('Error loading voices:', err);
+      }
+    }
+
+    if (synthSupported) {
+      loadVoices();
+      if (typeof window.speechSynthesis.onvoiceschanged !== 'undefined') {
+        window.speechSynthesis.onvoiceschanged = loadVoices;
+      }
+    }
+
+    function findBestVoice(speechLang, speechPrefix) {
+      if (!state.voices.length) return null;
+      const exact = state.voices.find(
+        (v) => v.lang && v.lang.toLowerCase() === speechLang.toLowerCase()
+      );
+      if (exact) return exact;
+      return (
+        state.voices.find(
+          (v) => v.lang && v.lang.toLowerCase().startsWith(speechPrefix.toLowerCase())
+        ) || null
+      );
+    }
+
+    function stopSpeaking() {
+      if (synthSupported) {
+        try {
+          window.speechSynthesis.cancel();
+        } catch (err) {
+          console.warn(err);
+        }
+      }
+      state.speakingKey = null;
+      updateSpeakingButtonsUI();
+    }
+
+    function speakText(text, langCfg, buttonKey) {
+      if (!synthSupported) {
+        showToast('Built-in speech is unavailable in this browser. Use the Google Translate link instead.', 'warn');
+        return;
+      }
+
+      // Clicking the active button stops playback
+      if (state.speakingKey === buttonKey) {
+        stopSpeaking();
+        return;
+      }
+
+      try {
+        window.speechSynthesis.cancel();
+      } catch (err) {
+        console.warn(err);
+      }
+
+      // Strip spaces for Chinese compounds so Mandarin TTS reads smoothly
+      const cleanText =
+        langCfg.speechPrefix === 'zh' ? String(text).replace(/\s+/g, '') : String(text).trim();
+
+      try {
+        const utterance = new SpeechSynthesisUtterance(cleanText);
+        utterance.lang = langCfg.speechLang;
+        utterance.rate = state.speechRate;
+
+        const voice = findBestVoice(langCfg.speechLang, langCfg.speechPrefix);
+        if (voice) utterance.voice = voice;
+
+        state.speakingKey = buttonKey;
+        updateSpeakingButtonsUI();
+
+        utterance.onend = () => {
+          if (state.speakingKey === buttonKey) {
+            state.speakingKey = null;
+            updateSpeakingButtonsUI();
+          }
+        };
+
+        utterance.onerror = (event) => {
+          if (event.error !== 'interrupted' && event.error !== 'canceled') {
+            showToast('Audio playback had an issue—try the Google Translate link.', 'warn');
+          }
+          if (state.speakingKey === buttonKey) {
+            state.speakingKey = null;
+            updateSpeakingButtonsUI();
+          }
+        };
+
+        window.speechSynthesis.speak(utterance);
+      } catch (err) {
+        console.error('TTS error:', err);
+        state.speakingKey = null;
+        updateSpeakingButtonsUI();
+        showToast('Unable to start audio playback on this device.', 'warn');
+      }
+    }
+
+    function updateSpeakingButtonsUI() {
+      document.querySelectorAll('[data-speak-key]').forEach((btn) => {
+        const key = btn.getAttribute('data-speak-key');
+        const isVerse = btn.getAttribute('data-speak-type') === 'verse';
+        const active = state.speakingKey === key;
+
+        if (isVerse) {
+          if (active) {
+            btn.className =
+              'inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-[#2e3b66] text-white shadow-sm speaking-pulse transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#3b4b80]/40';
+            btn.innerHTML = `${getStopIconSVG()}<span>Stop Audio</span>`;
+          } else {
+            btn.className =
+              'inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-[#3b4b80] hover:bg-[#2e3b66] active:scale-[0.98] text-white shadow-sm transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#3b4b80]/40';
+            btn.innerHTML = `${getSpeakerIconSVG()}<span>Listen (Full Verse)</span>`;
+          }
+        } else {
+          if (active) {
+            btn.className =
+              'inline-flex items-center justify-center w-10 h-10 rounded-xl bg-[#3b4b80] text-white shadow-sm speaking-pulse transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#3b4b80]/40';
+            btn.innerHTML = getStopIconSVG();
+            btn.setAttribute('aria-label', 'Stop audio');
+          } else {
+            btn.className =
+              'inline-flex items-center justify-center w-10 h-10 rounded-xl bg-[#f8f7f4] hover:bg-scholar-light hover:text-[#3b4b80] text-slate-600 border border-stone-200/80 active:scale-95 transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#3b4b80]/40';
+            btn.innerHTML = getSpeakerIconSVG();
+            btn.setAttribute('aria-label', 'Play word audio');
+          }
+        }
+      });
+    }
+
+    function updateVoiceNotice() {
+      const notice = document.getElementById('voice-notice');
+      if (!notice) return;
+      const cfg = getActiveLangConfig();
+      if (!cfg.hasAudio) {
+        notice.classList.add('hidden');
+        return;
+      }
+
+      if (!synthSupported) {
+        notice.innerHTML =
+          '<strong>Audio Note:</strong> Your browser does not support built-in speech. Use the <strong>Google Translate &nearr;</strong> link above to listen.';
+        notice.classList.remove('hidden');
+        return;
+      }
+
+      if (state.voicesLoaded) {
+        const matched = findBestVoice(cfg.speechLang, cfg.speechPrefix);
+        if (!matched) {
+          notice.innerHTML = `<strong>Voice Tip:</strong> No local <code>${escapeHtml(cfg.speechLang)}</code> voice was detected on this device—if pronunciation sounds off, tap <strong>Google Translate &nearr;</strong> above for native audio.`;
+          notice.classList.remove('hidden');
+        } else {
+          notice.classList.add('hidden');
+        }
+      }
+    }
+
+    /* =========================================================================
+       5. SESSION TIMER & WEB AUDIO CHIME
+       ========================================================================= */
+    function formatTime(totalSec) {
+      const mins = Math.floor(totalSec / 60);
+      const secs = totalSec % 60;
+      return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
+
+    function playGentleChime() {
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        const now = ctx.currentTime;
+
+        // Soft two-note bell chime (C5 -> G5)
+        [523.25, 783.99].forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now + i * 0.18);
+          gain.gain.setValueAtTime(0.0001, now + i * 0.18);
+          gain.gain.linearRampToValueAtTime(0.08, now + i * 0.18 + 0.03);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.18 + 0.85);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now + i * 0.18);
+          osc.stop(now + i * 0.18 + 0.9);
+        });
+      } catch (err) {
+        // AudioContext blocked or unsupported; silently skip chime
+      }
+    }
+
+    function pauseAllTimers() {
+      Object.keys(state.timers).forEach((key) => {
+        const t = state.timers[key];
+        if (t.intervalId) {
+          clearInterval(t.intervalId);
+          t.intervalId = null;
+        }
+        t.running = false;
+      });
+    }
+
+    function resetAllTimers() {
+      pauseAllTimers();
+      LANG_CONFIG.forEach((cfg) => {
+        state.timers[cfg.key].remaining = cfg.durationSec;
+      });
+    }
+
+    function toggleTimer(langKey) {
+      const timer = state.timers[langKey];
+      const cfg = LANG_CONFIG.find((c) => c.key === langKey);
+      if (!timer || !cfg) return;
+
+      if (timer.running) {
+        clearInterval(timer.intervalId);
+        timer.intervalId = null;
+        timer.running = false;
+      } else {
+        if (timer.remaining <= 0) {
+          timer.remaining = cfg.durationSec;
+        }
+        timer.running = true;
+        timer.intervalId = setInterval(() => {
+          timer.remaining -= 1;
+          updateTimerUI(langKey);
+
+          if (timer.remaining <= 0) {
+            clearInterval(timer.intervalId);
+            timer.intervalId = null;
+            timer.running = false;
+            playGentleChime();
+            showToast(`${cfg.fullTitle} session timer complete!`, 'success');
+            updateTimerUI(langKey);
+          }
+        }, 1000);
+      }
+      updateTimerUI(langKey);
+    }
+
+    function resetTimer(langKey) {
+      const timer = state.timers[langKey];
+      const cfg = LANG_CONFIG.find((c) => c.key === langKey);
+      if (!timer || !cfg) return;
+
+      if (timer.intervalId) {
+        clearInterval(timer.intervalId);
+        timer.intervalId = null;
+      }
+      timer.running = false;
+      timer.remaining = cfg.durationSec;
+      updateTimerUI(langKey);
+    }
+
+    function updateTimerUI(langKey) {
+      if (state.activeLangKey !== langKey) return;
+      const timer = state.timers[langKey];
+      const cfg = LANG_CONFIG.find((c) => c.key === langKey);
+      const display = document.getElementById('timer-display');
+      const toggleBtn = document.getElementById('timer-toggle-btn');
+      const bar = document.getElementById('timer-progress-bar');
+
+      if (display) {
+        display.textContent = formatTime(timer.remaining);
+        display.className = `font-mono text-base sm:text-lg font-bold tabular-nums ${
+          timer.remaining === 0 ? 'text-teal-700' : 'text-slate-900'
+        }`;
+      }
+      if (toggleBtn) {
+        toggleBtn.textContent = timer.running
+          ? 'Pause'
+          : timer.remaining === 0
+          ? 'Restart'
+          : 'Start';
+      }
+      if (bar && cfg) {
+        const pct = Math.max(0, Math.min(100, ((cfg.durationSec - timer.remaining) / cfg.durationSec) * 100));
+        bar.style.width = `${pct}%`;
+      }
+    }
+
+    /* =========================================================================
+       6. UTILITIES & INLINE SVG ICONS
+       ========================================================================= */
+    function escapeHtml(str) {
+      return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function getActiveVerse() {
+      return VERSES[state.verseIndex] || VERSES[0];
+    }
+
+    function getActiveLangConfig() {
+      return LANG_CONFIG.find((c) => c.key === state.activeLangKey) || LANG_CONFIG[0];
+    }
+
+    function getSpeakerIconSVG() {
+      return `<svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+        <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+        <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+      </svg>`;
+    }
+
+    function getStopIconSVG() {
+      return `<svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <rect x="6" y="6" width="12" height="12" rx="2"></rect>
+      </svg>`;
+    }
+
+    function getCheckIconSVG() {
+      return `<svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <polyline points="20 6 9 17 4 12"></polyline>
+      </svg>`;
+    }
+
+    function getPlayCircleIconSVG() {
+      return `<svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"></path>
+      </svg>`;
+    }
+
+    function getClockIconSVG() {
+      return `<svg class="w-4 h-4 text-[#3b4b80] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="10"></circle>
+        <polyline points="12 6 12 12 16 14"></polyline>
+      </svg>`;
+    }
+
+    function showToast(message, variant = 'info') {
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+
+      const palette =
+        variant === 'success'
+          ? 'bg-teal-700 text-white'
+          : variant === 'warn'
+          ? 'bg-amber-700 text-white'
+          : 'bg-slate-800 text-white';
+
+      const toast = document.createElement('div');
+      toast.className = `pointer-events-auto rounded-xl px-4 py-3 text-xs sm:text-sm font-medium shadow-lg transition-all duration-300 opacity-0 translate-y-2 ${palette}`;
+      toast.textContent = message;
+      container.appendChild(toast);
+
+      requestAnimationFrame(() => {
+        toast.classList.remove('opacity-0', 'translate-y-2');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 3200);
+    }
+
+    /**
+     * Pairs Chinese characters with their exact corresponding pinyin syllables.
+     * Supports space-separated pairs like ("起 初", "qǐ chū") AND gracefully handles
+     * unspaced characters if pasted later (e.g., "起初", "qǐ chū").
+     */
+    function buildChinesePairs(charsStr, pinyinStr) {
+      const charTokens = String(charsStr).trim().split(/\s+/).filter(Boolean);
+      const pinyinTokens = String(pinyinStr).trim().split(/\s+/).filter(Boolean);
+
+      if (charTokens.length === pinyinTokens.length) {
+        return charTokens.map((c, idx) => ({ c, p: pinyinTokens[idx] }));
+      }
+
+      const individualGlyphs = Array.from(String(charsStr).replace(/\s+/g, ''));
+      if (individualGlyphs.length === pinyinTokens.length) {
+        return individualGlyphs.map((c, idx) => ({ c, p: pinyinTokens[idx] }));
+      }
+
+      return [{ c: String(charsStr).replace(/\s+/g, ''), p: String(pinyinStr).trim() }];
+    }
+
+    /* =========================================================================
+       7. RENDERING FUNCTIONS
+       ========================================================================= */
+    function renderVerseSelector() {
+      const select = document.getElementById('verse-select');
+      const prevBtn = document.getElementById('prev-verse-btn');
+      const nextBtn = document.getElementById('next-verse-btn');
+      const badge = document.getElementById('progress-badge');
+      const activeVerse = getActiveVerse();
+
+      if (select) {
+        select.innerHTML = VERSES.map((v, idx) => {
+          const doneCount = countVerseDone(v.id);
+          const suffix = doneCount === LANG_CONFIG.length ? ' ✓' : doneCount > 0 ? ` (${doneCount}/5)` : '';
+          return `<option value="${idx}" ${idx === state.verseIndex ? 'selected' : ''}>${escapeHtml(v.title)}${suffix}</option>`;
+        }).join('');
+      }
+
+      if (prevBtn) prevBtn.disabled = state.verseIndex <= 0;
+      if (nextBtn) nextBtn.disabled = state.verseIndex >= VERSES.length - 1;
+
+      if (badge && activeVerse) {
+        const doneCount = countVerseDone(activeVerse.id);
+        badge.textContent = `${doneCount} / ${LANG_CONFIG.length} done`;
+        badge.className =
+          doneCount === LANG_CONFIG.length
+            ? 'text-xs font-bold px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-800'
+            : 'text-xs font-bold px-2.5 py-0.5 rounded-full bg-scholar-light text-[#3b4b80]';
+      }
+    }
+
+    function renderTabs() {
+      const tabBar = document.getElementById('tab-bar');
+      const verse = getActiveVerse();
+      if (!tabBar || !verse) return;
+
+      tabBar.innerHTML = LANG_CONFIG.map((cfg) => {
+        const isActive = cfg.key === state.activeLangKey;
+        const done = isLangDone(verse.id, cfg.key);
+
+        const tabClasses = isActive
+          ? 'bg-[#3b4b80] text-white border-[#3b4b80] shadow-sm'
+          : 'bg-white text-slate-600 border-stone-200 hover:border-[#3b4b80]/50 hover:text-[#3b4b80]';
+
+        const timePillClasses = isActive
+          ? 'bg-white/20 text-white'
+          : 'bg-[#f8f7f4] text-slate-500';
+
+        const checkBadge = done
+          ? `<span class="inline-flex items-center justify-center w-4 h-4 rounded-full ${
+              isActive ? 'bg-teal-400 text-slate-900' : 'bg-teal-100 text-teal-700'
+            }" title="Completed">${getCheckIconSVG()}</span>`
+          : '';
+
+        return `
+          <button
+            type="button"
+            role="tab"
+            aria-selected="${isActive}"
+            data-lang-key="${cfg.key}"
+            class="shrink-0 inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl border text-sm font-semibold transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#3b4b80]/30 ${tabClasses}"
+          >
+            ${checkBadge}
+            <span>${escapeHtml(cfg.tabLabel)}</span>
+            <span class="text-[11px] font-medium px-1.5 py-0.5 rounded-md ${timePillClasses}">
+              ${escapeHtml(cfg.timeLabel)}
+            </span>
+          </button>
+        `;
+      }).join('');
+
+      tabBar.querySelectorAll('[data-lang-key]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const nextKey = btn.getAttribute('data-lang-key');
+          if (nextKey && nextKey !== state.activeLangKey) {
+            stopSpeaking();
+            pauseAllTimers();
+            state.activeLangKey = nextKey;
+            saveLastSelection();
+            renderApp();
+          }
+        });
+      });
+    }
+
+    function renderTimerBar(cfg, verse) {
+      const timer = state.timers[cfg.key];
+      const done = isLangDone(verse.id, cfg.key);
+      const pct = Math.max(0, Math.min(100, ((cfg.durationSec - timer.remaining) / cfg.durationSec) * 100));
+
+      return `
+        <section class="bg-white border border-stone-200/90 rounded-2xl shadow-sm overflow-hidden">
+          <div class="px-4 sm:px-5 py-3.5 flex flex-wrap items-center justify-between gap-3">
+            <!-- Timer Info & Controls -->
+            <div class="flex flex-wrap items-center gap-2.5">
+              <div class="inline-flex items-center gap-2">
+                ${getClockIconSVG()}
+                <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Session Timer</span>
+              </div>
+              <span id="timer-display" class="font-mono text-base sm:text-lg font-bold tabular-nums ${
+                timer.remaining === 0 ? 'text-teal-700' : 'text-slate-900'
+              }">
+                ${formatTime(timer.remaining)}
+              </span>
+              <div class="inline-flex items-center gap-1.5">
+                <button
+                  type="button"
+                  id="timer-toggle-btn"
+                  class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#3b4b80] hover:bg-[#2e3b66] text-white transition cursor-pointer"
+                >
+                  ${timer.running ? 'Pause' : timer.remaining === 0 ? 'Restart' : 'Start'}
+                </button>
+                <button
+                  type="button"
+                  id="timer-reset-btn"
+                  class="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-[#f8f7f4] hover:bg-stone-200/70 text-slate-600 border border-stone-200 transition cursor-pointer"
+                >
+                  Reset
+                </button>
+              </div>
+            </div>
+
+            <!-- Mark Done Toggle -->
+            <button
+              type="button"
+              id="mark-done-btn"
+              class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold border transition cursor-pointer ${
+                done
+                  ? 'bg-teal-50 border-teal-300 text-teal-800 hover:bg-teal-100'
+                  : 'bg-white border-stone-200 text-slate-700 hover:border-[#3b4b80] hover:text-[#3b4b80]'
+              }"
+            >
+              ${getCheckIconSVG()}
+              <span>${done ? 'Marked Done' : 'Mark Done'}</span>
+            </button>
+          </div>
+          <!-- Thin Progress Track -->
+          <div class="h-1 w-full bg-stone-100">
+            <div id="timer-progress-bar" class="h-full bg-[#3b4b80] transition-all duration-300" style="width: ${pct}%"></div>
+          </div>
+        </section>
+      `;
+    }
+
+    function renderVerseCard(cfg, verse, data) {
+      let verseFontClass = 'text-xl sm:text-2xl leading-relaxed text-slate-900 font-medium';
+      if (cfg.key === 'hebrew') {
+        verseFontClass = 'font-hebrew text-3xl sm:text-4xl leading-[2.1] text-slate-900 text-right';
+      } else if (cfg.key === 'greek') {
+        verseFontClass = 'font-greek text-xl sm:text-2xl leading-relaxed text-slate-900';
+      } else if (cfg.key === 'chinese') {
+        verseFontClass = 'font-chinese text-2xl sm:text-3xl leading-relaxed tracking-wide text-slate-900 font-medium';
+      }
+
+      // Optional YouTube / Video Walkthrough Button
+      const videoBtnHTML =
+        data.videoUrl && data.videoLabel
+          ? `
+            <div class="mt-4 pt-4 border-t border-stone-100 flex flex-wrap items-center gap-3">
+              <a
+                href="${escapeHtml(data.videoUrl)}"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200/90 transition"
+              >
+                <span class="text-amber-600">${getPlayCircleIconSVG()}</span>
+                <span>${escapeHtml(data.videoLabel)}</span>
+                <span aria-hidden="true" class="text-amber-600">&nearr;</span>
+              </a>
+            </div>
+          `
+          : '';
+
+      // Audio Controls + Google Translate Fallback for Spanish, Chinese, Indonesian
+      let audioBarHTML = '';
+      if (cfg.hasAudio) {
+        const gtUrl = `https://translate.google.com/?sl=${encodeURIComponent(cfg.gtLang)}&tl=en&text=${encodeURIComponent(data.verse)}&op=translate`;
+
+        audioBarHTML = `
+          <div class="mt-5 pt-4 border-t border-stone-100 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex flex-wrap items-center gap-2.5">
+              <button
+                type="button"
+                id="full-verse-play-btn"
+                data-speak-key="${verse.id}-${cfg.key}-verse"
+                data-speak-type="verse"
+                class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-[#3b4b80] hover:bg-[#2e3b66] active:scale-[0.98] text-white shadow-sm transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#3b4b80]/40"
+              >
+                ${getSpeakerIconSVG()}
+                <span>Listen (Full Verse)</span>
+              </button>
+
+              <!-- Speed Toggle -->
+              <div class="inline-flex items-center bg-[#f8f7f4] p-1 rounded-xl border border-stone-200/90" role="group" aria-label="Playback Speed">
+                <button
+                  type="button"
+                  data-speed="1.0"
+                  class="speed-btn px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                    state.speechRate === 1.0
+                      ? 'bg-white text-[#3b4b80] shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }"
+                >
+                  1.0x Normal
+                </button>
+                <button
+                  type="button"
+                  data-speed="0.7"
+                  class="speed-btn px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                    state.speechRate === 0.7
+                      ? 'bg-white text-[#3b4b80] shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }"
+                >
+                  0.7x Slow
+                </button>
+              </div>
+            </div>
+
+            <a
+              href="${gtUrl}"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-[#3b4b80] underline decoration-stone-300 hover:decoration-[#3b4b80] underline-offset-4 transition py-1"
+            >
+              Google Translate &nearr;
+            </a>
+          </div>
+
+          <!-- Voice Fallback Hint (shown only if device lacks native voice) -->
+          <div
+            id="voice-notice"
+            class="hidden mt-3 text-xs text-amber-900 bg-amber-50 border border-amber-200/80 rounded-xl px-3.5 py-2.5 leading-relaxed"
+          ></div>
+        `;
+      }
+
+      return `
+        <section class="bg-white border border-stone-200/90 rounded-2xl p-5 sm:p-6 shadow-sm">
+          <div class="flex flex-wrap items-baseline justify-between gap-2 pb-3 mb-4 border-b border-stone-100">
+            <div>
+              <h2 class="text-lg sm:text-xl font-bold text-slate-900">${escapeHtml(cfg.fullTitle)}</h2>
+              <p class="text-xs text-slate-500 mt-0.5">${escapeHtml(cfg.subtitle)}</p>
+            </div>
+            <span class="text-xs font-semibold text-[#3b4b80] bg-scholar-light px-2.5 py-1 rounded-lg">
+              ${escapeHtml(verse.title)}
+            </span>
+          </div>
+
+          <!-- Full Verse Text -->
+          <div class="py-1">
+            <p dir="${cfg.dir}" class="${verseFontClass}">
+              ${escapeHtml(data.verse)}
+            </p>
+            ${
+              data.translit
+                ? `<p class="mt-3 text-sm sm:text-base text-slate-500 italic leading-relaxed">${escapeHtml(data.translit)}</p>`
+                : ''
+            }
+          </div>
+
+          ${videoBtnHTML}
+          ${audioBarHTML}
+        </section>
+      `;
+    }
+
+    function renderWordTable(cfg, verse, data) {
+      const words = Array.isArray(data.words) ? data.words : [];
+      let theadHTML = '';
+      let tbodyHTML = '';
+
+      if (cfg.key === 'hebrew' || cfg.key === 'greek') {
+        const wordFont =
+          cfg.key === 'hebrew'
+            ? 'font-hebrew text-2xl sm:text-[26px] text-slate-900'
+            : 'font-greek text-lg sm:text-xl text-slate-900';
+
+        theadHTML = `
+          <tr>
+            <th class="px-4 sm:px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Word</th>
+            <th class="px-4 sm:px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Transliteration</th>
+            <th class="px-4 sm:px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Gloss / Grammar</th>
+          </tr>
+        `;
+
+        tbodyHTML = words
+          .map(
+            (row) => `
+            <tr class="hover:bg-[#f8f7f4]/80 transition-colors">
+              <td dir="${cfg.dir}" class="px-4 sm:px-5 py-3.5 ${wordFont} ${
+              cfg.key === 'hebrew' ? 'text-right sm:text-left' : ''
+            } whitespace-nowrap font-medium">
+                ${escapeHtml(row[0])}
+              </td>
+              <td class="px-4 sm:px-5 py-3.5 text-sm text-[#3b4b80] italic whitespace-nowrap">
+                ${escapeHtml(row[1])}
+              </td>
+              <td class="px-4 sm:px-5 py-3.5 text-sm text-slate-700">
+                ${escapeHtml(row[2])}
+              </td>
+            </tr>
+          `
+          )
+          .join('');
+      } else if (cfg.key === 'spanish') {
+        theadHTML = `
+          <tr>
+            <th class="px-4 sm:px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Spanish</th>
+            <th class="px-4 sm:px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">English Gloss</th>
+            <th class="px-4 sm:px-5 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500 w-20">Audio</th>
+          </tr>
+        `;
+
+        tbodyHTML = words
+          .map(
+            (row, idx) => `
+            <tr class="hover:bg-[#f8f7f4]/80 transition-colors">
+              <td class="px-4 sm:px-5 py-3 text-base font-semibold text-slate-900 whitespace-nowrap">
+                ${escapeHtml(row[0])}
+              </td>
+              <td class="px-4 sm:px-5 py-3 text-sm text-slate-700">
+                ${escapeHtml(row[1])}
+              </td>
+              <td class="px-4 sm:px-5 py-2.5 text-right">
+                <button
+                  type="button"
+                  data-speak-key="${verse.id}-spanish-row-${idx}"
+                  data-row-index="${idx}"
+                  class="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-[#f8f7f4] hover:bg-scholar-light hover:text-[#3b4b80] text-slate-600 border border-stone-200/80 active:scale-95 transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#3b4b80]/40"
+                  aria-label="Play ${escapeHtml(row[0])}"
+                >
+                  ${getSpeakerIconSVG()}
+                </button>
+              </td>
+            </tr>
+          `
+          )
+          .join('');
+      } else if (cfg.key === 'chinese') {
+        theadHTML = `
+          <tr>
+            <th class="px-4 sm:px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Character &amp; Pinyin</th>
+            <th class="px-4 sm:px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">English Gloss</th>
+            <th class="px-4 sm:px-5 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500 w-20">Audio</th>
+          </tr>
+        `;
+
+        tbodyHTML = words
+          .map((row, idx) => {
+            const pairs = buildChinesePairs(row[0], row[1]);
+            const stackedHTML = pairs
+              .map(
+                (pair) => `
+                <div class="inline-flex flex-col items-center min-w-[2.6rem] px-1.5 py-1 rounded-lg bg-[#f8f7f4] border border-stone-200/60">
+                  <span class="font-chinese text-xl sm:text-2xl font-semibold text-slate-900 leading-tight">${escapeHtml(pair.c)}</span>
+                  <span class="text-xs font-medium text-[#3b4b80] mt-0.5 leading-tight">${escapeHtml(pair.p)}</span>
+                </div>
+              `
+              )
+              .join('');
+
+            return `
+              <tr class="hover:bg-[#f8f7f4]/60 transition-colors">
+                <td class="px-4 sm:px-5 py-3 whitespace-nowrap">
+                  <div class="inline-flex items-center gap-1.5">
+                    ${stackedHTML}
+                  </div>
+                </td>
+                <td class="px-4 sm:px-5 py-3 text-sm text-slate-700">
+                  ${escapeHtml(row[2])}
+                </td>
+                <td class="px-4 sm:px-5 py-2.5 text-right">
+                  <button
+                    type="button"
+                    data-speak-key="${verse.id}-chinese-row-${idx}"
+                    data-row-index="${idx}"
+                    class="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-[#f8f7f4] hover:bg-scholar-light hover:text-[#3b4b80] text-slate-600 border border-stone-200/80 active:scale-95 transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#3b4b80]/40"
+                    aria-label="Play ${escapeHtml(String(row[0]).replace(/\s+/g, ''))}"
+                  >
+                    ${getSpeakerIconSVG()}
+                  </button>
+                </td>
+              </tr>
+            `;
+          })
+          .join('');
+      } else if (cfg.key === 'indonesian') {
+        theadHTML = `
+          <tr>
+            <th class="px-4 sm:px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Indonesian</th>
+            <th class="px-4 sm:px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Root</th>
+            <th class="px-4 sm:px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">English Gloss</th>
+            <th class="px-4 sm:px-5 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500 w-20">Audio</th>
+          </tr>
+        `;
+
+        tbodyHTML = words
+          .map(
+            (row, idx) => `
+            <tr class="hover:bg-[#f8f7f4]/80 transition-colors">
+              <td class="px-4 sm:px-5 py-3 text-base font-semibold text-slate-900 whitespace-nowrap">
+                ${escapeHtml(row[0])}
+              </td>
+              <td class="px-4 sm:px-5 py-3 text-sm whitespace-nowrap ${
+                row[1] === '—' || !row[1] ? 'text-slate-300' : 'text-[#3b4b80] font-medium'
+              }">
+                ${escapeHtml(row[1] || '—')}
+              </td>
+              <td class="px-4 sm:px-5 py-3 text-sm text-slate-700">
+                ${escapeHtml(row[2])}
+              </td>
+              <td class="px-4 sm:px-5 py-2.5 text-right">
+                <button
+                  type="button"
+                  data-speak-key="${verse.id}-indonesian-row-${idx}"
+                  data-row-index="${idx}"
+                  class="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-[#f8f7f4] hover:bg-scholar-light hover:text-[#3b4b80] text-slate-600 border border-stone-200/80 active:scale-95 transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#3b4b80]/40"
+                  aria-label="Play ${escapeHtml(row[0])}"
+                >
+                  ${getSpeakerIconSVG()}
+                </button>
+              </td>
+            </tr>
+          `
+          )
+          .join('');
+      }
+
+      return `
+        <section class="bg-white border border-stone-200/90 rounded-2xl shadow-sm overflow-hidden">
+          <div class="px-5 py-3.5 border-b border-stone-100 flex items-center justify-between">
+            <h3 class="text-sm font-bold text-slate-800">Word-for-Word Breakdown</h3>
+            <span class="text-xs text-slate-400">${words.length} items</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full border-collapse">
+              <thead class="bg-[#f8f7f4] border-b border-stone-200/80">
+                ${theadHTML}
+              </thead>
+              <tbody class="divide-y divide-stone-100">
+                ${tbodyHTML}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      `;
+    }
+
+    function renderNotesAndDrill(data) {
+      return `
+        <section class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Grammar / Study Note Card -->
+          <div class="bg-white border border-stone-200/90 border-l-4 border-l-amber-500 rounded-2xl p-5 shadow-sm">
+            <span class="inline-block text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg bg-amber-50 text-amber-800 border border-amber-200/70 mb-2.5">
+              ${escapeHtml(data.noteTitle || 'Study Note')}
+            </span>
+            <p class="text-sm sm:text-[15px] text-slate-700 leading-relaxed">
+              ${escapeHtml(data.note)}
+            </p>
+          </div>
+
+          <!-- Quick Drill Card -->
+          <div class="bg-white border border-stone-200/90 border-l-4 border-l-teal-600 rounded-2xl p-5 shadow-sm">
+            <span class="inline-block text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg bg-teal-50 text-teal-800 border border-teal-200/70 mb-2.5">
+              Quick Drill
+            </span>
+            <p class="text-sm sm:text-[15px] text-slate-700 leading-relaxed">
+              ${escapeHtml(data.drill)}
+            </p>
+          </div>
+        </section>
+      `;
+    }
+
+    function attachPanelListeners(cfg, verse, data) {
+      // Timer buttons
+      const toggleBtn = document.getElementById('timer-toggle-btn');
+      const resetBtn = document.getElementById('timer-reset-btn');
+      if (toggleBtn) toggleBtn.addEventListener('click', () => toggleTimer(cfg.key));
+      if (resetBtn) resetBtn.addEventListener('click', () => resetTimer(cfg.key));
+
+      // Mark Done toggle
+      const markDoneBtn = document.getElementById('mark-done-btn');
+      if (markDoneBtn) {
+        markDoneBtn.addEventListener('click', () => {
+          const currentlyDone = isLangDone(verse.id, cfg.key);
+          setLangDone(verse.id, cfg.key, !currentlyDone);
+          if (!currentlyDone) {
+            showToast(`${verse.title} — ${cfg.tabLabel} marked done!`, 'success');
+          }
+          renderApp();
+        });
+      }
+
+      // Audio Controls
+      if (cfg.hasAudio) {
+        const fullVerseBtn = document.getElementById('full-verse-play-btn');
+        if (fullVerseBtn) {
+          fullVerseBtn.addEventListener('click', () => {
+            speakText(data.verse, cfg, `${verse.id}-${cfg.key}-verse`);
+          });
+        }
+
+        // Speed toggle
+        document.querySelectorAll('.speed-btn').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const nextRate = parseFloat(btn.getAttribute('data-speed'));
+            if (!Number.isNaN(nextRate)) {
+              state.speechRate = nextRate;
+              stopSpeaking();
+              renderApp();
+              showToast(`Audio speed: ${nextRate === 0.7 ? '0.7x Slow' : '1.0x Normal'}`);
+            }
+          });
+        });
+
+        // Individual word buttons (lookup text safely from data.words by index)
+        document.querySelectorAll('[data-row-index]').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const idx = parseInt(btn.getAttribute('data-row-index'), 10);
+            const row = data.words[idx];
+            if (!row) return;
+            const speakKey = btn.getAttribute('data-speak-key');
+            speakText(row[0], cfg, speakKey);
+          });
+        });
+
+        updateSpeakingButtonsUI();
+        updateVoiceNotice();
+      }
+    }
+
+    function renderApp() {
+      const verse = getActiveVerse();
+      const cfg = getActiveLangConfig();
+      if (!verse || !cfg) return;
+
+      const data = verse[cfg.key];
+      renderVerseSelector();
+      renderTabs();
+
+      const panel = document.getElementById('study-panel');
+      if (!panel) return;
+
+      if (!data) {
+        panel.innerHTML = `
+          <div class="bg-white border border-stone-200 rounded-2xl p-8 text-center text-slate-500">
+            No ${escapeHtml(cfg.fullTitle)} entry found for ${escapeHtml(verse.title)}.
+          </div>
+        `;
+        return;
+      }
+
+      panel.innerHTML = `
+        ${renderTimerBar(cfg, verse)}
+        ${renderVerseCard(cfg, verse, data)}
+        ${renderWordTable(cfg, verse, data)}
+        ${renderNotesAndDrill(data)}
+      `;
+
+      attachPanelListeners(cfg, verse, data);
+    }
+
+    function switchVerse(newIndex) {
+      if (newIndex < 0 || newIndex >= VERSES.length || newIndex === state.verseIndex) return;
+      stopSpeaking();
+      resetAllTimers();
+      state.verseIndex = newIndex;
+      saveLastSelection();
+      renderApp();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    /* =========================================================================
+       8. VERSE LIBRARY — ADD NEW VERSES BELOW!
+       ========================================================================= */
+    const VERSES = [
+      // ---------------- VERSE 1: Genesis 1:1 ----------------
+      {
+        id: 'gen-1-1',
+        title: 'Genesis 1:1',
+        hebrew: {
+          verse: 'בְּרֵאשִׁית בָּרָא אֱלֹהִים אֵת הַשָּׁמַיִם וְאֵת הָאָרֶץ׃',
+          translit: 'Bə-rēʾšît bārāʾ ʾĕlōhîm ʾēt haššāmayim wəʾēt hāʾāreṣ.',
+          words: [
+            ['בְּרֵאשִׁית', 'bə-rēʾšît', 'in-beginning'],
+            ['בָּרָא', 'bārāʾ', 'created (Qal Perf 3ms)'],
+            ['אֱלֹהִים', 'ʾĕlōhîm', 'God'],
+            ['אֵת', 'ʾēt', '(direct object marker)'],
+            ['הַשָּׁמַיִם', 'ha-ššāmayim', 'the-heavens'],
+            ['וְאֵת', 'wə-ʾēt', 'and-(direct object marker)'],
+            ['הָאָרֶץ', 'hā-ʾāreṣ', 'the-earth'],
+          ],
+          noteTitle: 'Grammar Check',
+          note: 'בָּרָא (bārāʾ) is a Qal Perfect 3ms (the lexical base form). Notice the definite direct object marker אֵת (ʾēt) sitting in front of both the heavens and the earth.',
+          drill: 'Read it aloud once for rhythm, spot the 3ms verb, and move on.',
+        },
+        greek: {
+          verse: 'Ἐν ἀρχῇ ἐποίησεν ὁ θεὸς τὸν οὐρανὸν καὶ τὴν γῆν.',
+          translit: 'En archē epoiēsen ho theos ton ouranon kai tēn gēn.',
+          words: [
+            ['Ἐν', 'En', 'in'],
+            ['ἀρχῇ', 'archē', 'beginning (dat. fem. sg.)'],
+            ['ἐποίησεν', 'epoiēsen', 'made / created (Aor Act Ind 3sg)'],
+            ['ὁ', 'ho', 'the (nom. masc. sg.)'],
+            ['θεὸς', 'theos', 'God'],
+            ['τὸν', 'ton', 'the (acc. masc. sg.)'],
+            ['οὐρανὸν', 'ouranon', 'heaven / sky'],
+            ['καὶ', 'kai', 'and'],
+            ['τὴν', 'tēn', 'the (acc. fem. sg.)'],
+            ['γῆν', 'gēn', 'earth / land'],
+          ],
+          noteTitle: 'Grammar Check & Hook',
+          note: 'ἐποίησεν is an Aorist Active Indicative 3sg (from ποιέω, "to make/do"). Cross-language hook: Hebrew uses plural haššāmayim ("heavens"), while the Greek translators rendered it singular (τὸν οὐρανὸν, "the heaven/sky").',
+          drill: 'Read aloud once, noting the Aorist active ending -εν and the accusative direct objects.',
+        },
+        spanish: {
+          verse: 'En el principio, Dios creó los cielos y la tierra.',
+          words: [
+            ['En', 'in'],
+            ['el', 'the'],
+            ['principio', 'beginning'],
+            ['Dios', 'God'],
+            ['creó', 'created (preterite)'],
+            ['los', 'the (masc. pl.)'],
+            ['cielos', 'heavens / skies'],
+            ['y', 'and'],
+            ['la', 'the (fem. sg.)'],
+            ['tierra', 'earth / land'],
+          ],
+          noteTitle: 'Focus',
+          note: 'Notice los cielos follows the Hebrew plural, and creó is the simple preterite for a completed action.',
+          drill: 'Say it aloud once at full native speed, then make up one quick everyday sentence using al principio ("at first")—e.g., "Al principio no entendía nada, pero ahora es más fácil."',
+        },
+        chinese: {
+          verse: '起初，上帝创造了天地。',
+          translit: 'Qǐchū, Shàngdì chuàngzào le tiāndì.',
+          words: [
+            ['起 初', 'qǐ chū', 'in the beginning'],
+            ['上 帝', 'Shàng dì', 'God'],
+            ['创 造', 'chuàng zào', 'to create'],
+            ['了', 'le', '(completed action particle)'],
+            ['天 地', 'tiān dì', 'heaven and earth (lit. sky-earth)'],
+          ],
+          noteTitle: 'Word Note',
+          note: '天地 (tiāndì) is a common 2-character compound literally meaning "sky-earth." 了 (le) marks the completed action.',
+          drill: 'Say the pinyin aloud twice, focusing on the falling 4th tones in 创 (chuàng), 造 (zào), and 地 (dì).',
+        },
+        indonesian: {
+          verse: 'Pada mulanya, Allah menciptakan langit dan bumi.',
+          words: [
+            ['Pada', '—', 'at / in / on'],
+            ['mulanya', 'mula (start)', 'the beginning'],
+            ['Allah', '—', 'God'],
+            ['menciptakan', 'cipta (create)', 'created'],
+            ['langit', '—', 'sky / heavens'],
+            ['dan', '—', 'and'],
+            ['bumi', '—', 'earth'],
+          ],
+          noteTitle: 'Grammar Note',
+          note: 'menciptakan wraps the root cipta ("create") in men-...-kan to form an active transitive verb. Allah is the standard word used by Indonesian Christians.',
+          drill: 'Borrow mulai (the everyday verb form of mula, "to start") and drop it into a sentence tonight—e.g., "Ayo mulai" ("Let\'s start").',
+        },
+      },
+
+      // ---------------- VERSE 2: Genesis 1:2 ----------------
+      {
+        id: 'gen-1-2',
+        title: 'Genesis 1:2',
+        hebrew: {
+          verse: 'וְהָאָרֶץ הָיְתָה תֹהוּ וָבֹהוּ וְחֹשֶׁךְ עַל־פְּנֵי תְהוֹם וְרוּחַ אֱלֹהִים מְרַחֶפֶת עַל־פְּנֵי הַמָּיִם׃',
+          translit: 'Wəhāʾāreṣ hāyətāh tōhû wābōhû, wəḥōšek ʿal-pənê təhôm, wərûaḥ ʾĕlōhîm məraḥepet ʿal-pənê hammāyim.',
+          words: [
+            ['וְהָאָרֶץ', 'wə-hā-ʾāreṣ', 'and-the-earth'],
+            ['הָיְתָה', 'hāyətāh', 'was (Qal Perf 3fs)'],
+            ['תֹהוּ', 'tōhû', 'formlessness / wasteland'],
+            ['וָבֹהוּ', 'wā-bōhû', 'and-emptiness / void'],
+            ['וְחֹשֶׁךְ', 'wə-ḥōšek', 'and-darkness'],
+            ['עַל־', 'ʿal', 'upon / over'],
+            ['פְּנֵי', 'pənê', 'face of / surface of (construct)'],
+            ['תְהוֹם', 'təhôm', 'deep / abyss'],
+            ['וְרוּחַ', 'wə-rûaḥ', 'and-Spirit / wind (construct)'],
+            ['אֱלֹהִים', 'ʾĕlōhîm', 'God'],
+            ['מְרַחֶפֶת', 'məraḥepet', 'hovering / fluttering (Piel Ptc fs)'],
+            ['עַל־', 'ʿal', 'upon / over'],
+            ['פְּנֵי', 'pənê', 'face of / surface of'],
+            ['הַמָּיִם', 'ha-mmāyim', 'the-waters'],
+          ],
+          noteTitle: 'Grammar Check',
+          note: 'הָיְתָה (hāyətāh) is a Qal Perfect 3fs ("was"), matching the feminine noun ʾereṣ ("earth"). מְרַחֶפֶת (məraḥepet) is a Piel Participle fs ("hovering/fluttering"), matching feminine rûaḥ ("Spirit/wind").',
+          drill: 'Read aloud to feel the rhythm of the famous rhyming pair תֹהוּ וָבֹהוּ (tōhû wābōhû — "formless and empty") and the repeated idiom עַל־פְּנֵי (ʿal-pənê — literally "upon the face of").',
+        },
+        greek: {
+          verse: 'ἡ δὲ γῆ ἦν ἀόρατος καὶ ἀκατασκεύαστος, καὶ σκότος ἐπάνω τῆς ἀβύσσου, καὶ πνεῦμα θεοῦ ἐπεφέρετο ἐπάνω τοῦ ὕδατος.',
+          translit: 'Hē de gē ēn aoratos kai akataskeuastos, kai skotos epanō tēs abyssou, kai pneuma theou epephereto epanō tou hydatos.',
+          words: [
+            ['ἡ', 'hē', 'the (nom. fem. sg.)'],
+            ['δὲ', 'de', 'and / now (postpositive)'],
+            ['γῆ', 'gē', 'earth / land'],
+            ['ἦν', 'ēn', 'was (Impf Act Ind 3sg)'],
+            ['ἀόρατος', 'aoratos', 'invisible / unseen'],
+            ['καὶ', 'kai', 'and'],
+            ['ἀκατασκεύαστος', 'akataskeuastos', 'unformed / unprepared'],
+            ['καὶ', 'kai', 'and'],
+            ['σκότος', 'skotos', 'darkness'],
+            ['ἐπάνω', 'epanō', 'upon / over'],
+            ['τῆς', 'tēs', 'of the (gen. fem. sg.)'],
+            ['ἀβύσσου', 'abyssou', 'abyss / deep'],
+            ['καὶ', 'kai', 'and'],
+            ['πνεῦμα', 'pneuma', 'Spirit / wind'],
+            ['θεοῦ', 'theou', 'of God'],
+            ['ἐπεφέρετο', 'epephereto', 'was sweeping / carried over (Impf Mid/Pass 3sg)'],
+            ['ἐπάνω', 'epanō', 'upon / over'],
+            ['τοῦ', 'tou', 'of the (gen. neut. sg.)'],
+            ['ὕδατος', 'hydatos', 'water'],
+          ],
+          noteTitle: 'Grammar Check & Hook',
+          note: 'Notice the shift from the Aorist in verse 1 to the Imperfect here: ἦν ("was") and ἐπεφέρετο (Imperfect Mid/Pass 3sg of ἐπιφέρω, "was sweeping/being carried over"). Greek translates tōhû wābōhû with two alpha-privative adjectives: ἀόρατος ("invisible") and ἀκατασκεύαστος ("unformed").',
+          drill: 'Read aloud and spot the two Imperfect verbs setting the ongoing background scene.',
+        },
+        spanish: {
+          verse: 'La tierra no tenía forma y estaba vacía, la oscuridad cubría las aguas profundas, y el Espíritu de Dios se movía sobre la superficie del agua.',
+          words: [
+            ['La', 'the'],
+            ['tierra', 'earth / land'],
+            ['no', 'not'],
+            ['tenía', 'had (imperfect)'],
+            ['forma', 'form / shape'],
+            ['y', 'and'],
+            ['estaba', 'was (state, imperfect)'],
+            ['vacía', 'empty'],
+            ['la', 'the'],
+            ['oscuridad', 'darkness'],
+            ['cubría', 'covered / was covering (imperfect)'],
+            ['las', 'the (fem. pl.)'],
+            ['aguas', 'waters'],
+            ['profundas', 'deep'],
+            ['y', 'and'],
+            ['el', 'the'],
+            ['Espíritu', 'Spirit'],
+            ['de', 'of'],
+            ['Dios', 'God'],
+            ['se movía', 'was moving (reflexive, imperfect)'],
+            ['sobre', 'over / upon'],
+            ['la', 'the'],
+            ['superficie', 'surface'],
+            ['del', 'of the (de + el)'],
+            ['agua', 'water'],
+          ],
+          noteTitle: 'Focus',
+          note: 'Just like the Greek, Spanish switches from the preterite (creó) in verse 1 to the imperfect (tenía, estaba, cubría, se movía) to paint the background scene.',
+          drill: 'Say the verse aloud at natural speed, then make up one everyday sentence using estaba vacía or no tenía forma—e.g., "Llegué a la cafetería y estaba vacía."',
+        },
+        chinese: {
+          verse: '大地还没有形状，一片空虚，黑暗笼罩着深渊，上帝的灵在水面上运行。',
+          translit: "Dàdì hái méiyǒu xíngzhuàng, yīpiàn kōngxū, hēi'àn lǒngzhào zhe shēnyuān, Shàngdì de líng zài shuǐmiàn shàng yùnxíng.",
+          words: [
+            ['大 地', 'dà dì', 'earth / great land'],
+            ['还', 'hái', 'still / yet'],
+            ['没 有', 'méi yǒu', 'did not have'],
+            ['形 状', 'xíng zhuàng', 'shape / form'],
+            ['一 片', 'yī piàn', 'an expanse / stretch of'],
+            ['空 虚', 'kōng xū', 'emptiness / void'],
+            ['黑 暗', 'hēi àn', 'darkness'],
+            ['笼 罩', 'lǒng zhào', 'cover / envelop'],
+            ['着', 'zhe', '(ongoing state particle)'],
+            ['深 渊', 'shēn yuān', 'deep abyss'],
+            ['上 帝', 'Shàng dì', 'God'],
+            ['的', 'de', "of / 's (possessive)"],
+            ['灵', 'líng', 'Spirit'],
+            ['在', 'zài', 'at / on'],
+            ['水 面', 'shuǐ miàn', 'water surface'],
+            ['上', 'shàng', 'upon / on top of'],
+            ['运 行', 'yùn xíng', 'move / hover / operate'],
+          ],
+          noteTitle: 'Pattern Note',
+          note: '在...上 (zài...shàng, "on top of...") frames the location 水面 (water surface). 着 (zhe) indicates an ongoing background state.',
+          drill: 'Say 还没有 (hái méiyǒu, "not yet") and 水面上 (shuǐmiàn shàng, "on the surface of the water") aloud three times—both are high-frequency patterns in everyday Mandarin.',
+        },
+        indonesian: {
+          verse: 'Bumi belum berbentuk dan kosong, kegelapan menutupi samudra yang dalam, dan Roh Allah melayang-layang di atas permukaan air.',
+          words: [
+            ['Bumi', '—', 'earth'],
+            ['belum', '—', 'not yet'],
+            ['berbentuk', 'bentuk (form)', 'having form / shaped'],
+            ['dan', '—', 'and'],
+            ['kosong', '—', 'empty'],
+            ['kegelapan', 'gelap (dark)', 'darkness'],
+            ['menutupi', 'tutup (cover/close)', 'covered / covering'],
+            ['samudra', '—', 'ocean / deep sea'],
+            ['yang', '—', 'which / that (connector)'],
+            ['dalam', '—', 'deep'],
+            ['dan', '—', 'and'],
+            ['Roh', '—', 'Spirit'],
+            ['Allah', '—', 'God'],
+            ['melayang-layang', 'layang (float/soar)', 'hovering / floating about'],
+            ['di', '—', 'at / on'],
+            ['atas', '—', 'top / above (di atas = over)'],
+            ['permukaan', 'muka (face)', 'surface'],
+            ['air', '—', 'water'],
+          ],
+          noteTitle: 'Grammar Note',
+          note: 'Notice how kegelapan ("darkness") wraps the root gelap ("dark") with ke-...-an—a super common Indonesian pattern that turns an adjective into a noun.',
+          drill: 'Drop belum ("not yet") or kosong ("empty") into conversation tonight—e.g., "Belum makan" ("Haven\'t eaten yet") or "Gelasnya kosong" ("The glass is empty").',
+        },
+      },
+
+      // ---------------- VERSE 3: Genesis 1:3 ----------------
+      {
+        id: 'gen-1-3',
+        title: 'Genesis 1:3',
+        hebrew: {
+          verse: 'וַיֹּאמֶר אֱלֹהִים יְהִי אוֹר וַיְהִי־אוֹר׃',
+          translit: 'Wayyōʾmer ʾĕlōhîm yəhî ʾôr wayəhî-ʾôr.',
+          videoUrl: 'https://www.youtube.com/watch?v=6VsWZMeD5wA',
+          videoLabel: 'Daily Dose of Hebrew – Genesis 1:3',
+          words: [
+            ['וַיֹּאמֶר', 'wayyōʾmer', 'and he said (Qal Wayyiqtol 3ms)'],
+            ['אֱלֹהִים', 'ʾĕlōhîm', 'God'],
+            ['יְהִי', 'yəhî', 'let there be (Qal Jussive 3ms)'],
+            ['אוֹר', 'ʾôr', 'light'],
+            ['וַיְהִי־', 'wayəhî', 'and there was (Qal Wayyiqtol 3ms)'],
+            ['אוֹר', 'ʾôr', 'light'],
+          ],
+          noteTitle: 'Grammar Check',
+          note: 'A classic showcase of the Wayyiqtol (vav-consecutive imperfect: וַיֹּאמֶר, וַיְהִי) and the Jussive (יְהִי, "let there be").',
+          drill: 'Read it aloud once, noticing how compact the Hebrew is—just six words total.',
+        },
+        greek: {
+          verse: 'καὶ εἶπεν ὁ θεός Γενηθήτω φῶς. καὶ ἐγένετο φῶς.',
+          translit: 'Kai eipen ho theos: Genēthētō phōs. Kai egeneto phōs.',
+          videoUrl: 'https://www.youtube.com/watch?v=qLacVA3bf9o',
+          videoLabel: 'Genesis 1:3 Septuagint Walkthrough',
+          words: [
+            ['καὶ', 'kai', 'and'],
+            ['εἶπεν', 'eipen', 'said (Aor Act Ind 3sg)'],
+            ['ὁ', 'ho', 'the'],
+            ['θεός', 'theos', 'God'],
+            ['Γενηθήτω', 'Genēthētō', 'let it come to be (Aor Pass Impv 3sg)'],
+            ['φῶς', 'phōs', 'light'],
+            ['καὶ', 'kai', 'and'],
+            ['ἐγένετο', 'egeneto', 'it came to be (Aor Mid Ind 3sg)'],
+            ['φῶς', 'phōs', 'light'],
+          ],
+          noteTitle: 'Grammar Check',
+          note: 'Greek translates the Hebrew Jussive with a 3rd-person imperative: Γενηθήτω (Aorist Passive Imperative 3sg of γίνομαι), followed immediately by ἐγένετο (Aorist Middle Indicative 3sg).',
+          drill: 'Read aloud and contrast the imperative ending -θήτω with the indicative ἐγένετο.',
+        },
+        spanish: {
+          verse: 'Entonces Dios dijo: «Que haya luz», y hubo luz.',
+          words: [
+            ['Entonces', 'then'],
+            ['Dios', 'God'],
+            ['dijo', 'said (preterite)'],
+            ['Que', 'let / that'],
+            ['haya', 'there be (present subjunctive)'],
+            ['luz', 'light'],
+            ['y', 'and'],
+            ['hubo', 'there was (preterite)'],
+            ['luz', 'light'],
+          ],
+          noteTitle: 'Focus',
+          note: 'Just like the Hebrew jussive and Greek 3rd-person imperative, Spanish uses the present subjunctive (que haya) for the command, then switches to the preterite (hubo) for the result.',
+          drill: 'Say the verse aloud, then use que haya in one everyday sentence—e.g., "Ojalá que haya café todavía."',
+        },
+        chinese: {
+          verse: '上帝说：“要有光！”就有了光。',
+          translit: 'Shàngdì shuō: “Yào yǒu guāng!” Jiù yǒu le guāng.',
+          words: [
+            ['上 帝', 'Shàng dì', 'God'],
+            ['说', 'shuō', 'to say'],
+            ['要', 'yào', 'must / let (lit. want)'],
+            ['有', 'yǒu', 'have / there be'],
+            ['光', 'guāng', 'light'],
+            ['就', 'jiù', 'then / immediately'],
+            ['有 了', 'yǒu le', 'there was / came to have'],
+            ['光', 'guāng', 'light'],
+          ],
+          noteTitle: 'Word Note',
+          note: '就 (jiù) shows an immediate result ("then right away") and is one of the most important connector words in spoken Mandarin.',
+          drill: 'Say 就有了 (jiù yǒu le) aloud three times, paying attention to the falling 4th tone on 就 (jiù).',
+        },
+        indonesian: {
+          verse: 'Allah berfirman, “Jadilah terang!” Lalu terang itu pun jadi.',
+          words: [
+            ['Allah', '—', 'God'],
+            ['berfirman', 'firman (decree)', 'spoke / decreed (biblical)'],
+            ['Jadilah', 'jadi (become)', 'let it become / be!'],
+            ['terang', '—', 'light / bright'],
+            ['Lalu', '—', 'then / next'],
+            ['terang', '—', 'light'],
+            ['itu', '—', 'that / the'],
+            ['pun', '—', 'also / indeed (emphasis)'],
+            ['jadi', 'jadi', 'became / happened'],
+          ],
+          noteTitle: 'Grammar Note',
+          note: 'berfirman is formal/biblical (everyday spoken Indonesian uses berkata or bilang). Adding -lah to jadi softens or emphasizes a command.',
+          drill: 'Jadi is a Swiss-Army-knife word ("so", "become", "it\'s a deal"). Try dropping "Jadi, kita makan apa?" ("So, what are we eating?") tonight.',
+        },
+      },
+
+      // ==========================================
+      // PASTE NEW VERSES RIGHT BELOW THIS LINE
+      // ==========================================
+      // (Paste each new { id: 'gen-1-4', title: 'Genesis 1:4', ... }, object right here!)
+    ];
+
+    /* =========================================================================
+       9. APP INITIALIZATION
+       ========================================================================= */
+    function initApp() {
+      restoreLastSelection();
+
+      const select = document.getElementById('verse-select');
+      const prevBtn = document.getElementById('prev-verse-btn');
+      const nextBtn = document.getElementById('next-verse-btn');
+
+      if (select) {
+        select.addEventListener('change', (e) => {
+          const idx = parseInt(e.target.value, 10);
+          if (!Number.isNaN(idx)) switchVerse(idx);
+        });
+      }
+
+      if (prevBtn) {
+        prevBtn.addEventListener('click', () => switchVerse(state.verseIndex - 1));
+      }
+
+      if (nextBtn) {
+        nextBtn.addEventListener('click', () => switchVerse(state.verseIndex + 1));
+      }
+
+      renderApp();
+    }
+
+    window.addEventListener('DOMContentLoaded', initApp);
+    window.addEventListener('beforeunload', stopSpeaking);
+  </script>
+</body>
+</html>
